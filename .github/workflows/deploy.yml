@@ -24,6 +24,8 @@ jobs:
         run: npm install
         
       - name: Set AWS Secrets in Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           wrangler secret put AWS_ACCESS_KEY_ID <<< "${{ secrets.AWS_ACCESS_KEY_ID }}"
           wrangler secret put AWS_SECRET_ACCESS_KEY <<< "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
