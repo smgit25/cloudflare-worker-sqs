@@ -16,6 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install wrangler CLI
+        run: npm install -g wrangler
+
+
       - name: Install dependencies (if needed)
         run: npm install
         
