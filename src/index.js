@@ -204,15 +204,18 @@ async function getAuthorizationHeader(params, amzDate, dateStamp, AWS_ACCESS_KEY
 
 import { AwsClient } from 'aws4fetch';
 
+addEventListener('fetch', event => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+  console.log('Received request:', request.method, request.url);
 const aws = new AwsClient({
   accessKeyId: 'AKIA57JRPEXWCQFPB4NS',
   secretAccessKey: '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',
   service: 'sqs',
   region: 'us-east-2' // like 'us-east-1'
 });
-
-export default {
-  async fetch(request) {
     const sqsUrl = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
     const payload = {
       Action: 'SendMessage',
@@ -227,7 +230,6 @@ export default {
 
     return new Response('Message sent to SQS!', { status: 200 });
   }
-};
 
 
 // Utility functions (hash, hmac, getSignatureKey, hmacText) remain unchanged
