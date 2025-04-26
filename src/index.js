@@ -1,3 +1,8 @@
+
+const AWS_REGION = 'us-east-2';
+const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
+
+
 export default {
   async fetch(request, env, ctx) {
     const now = new Date();
