@@ -6,7 +6,7 @@ export default {
     
     // New part: get the x-request-id header
     const requestId = request.headers.get('x-request-id');
-    
+    console.log('x-request-id:', requestId);
     // Only continue if x-request-id is exactly 'test'
     if (requestId == 'test') {
       // Format: 20250420T123456Z
@@ -73,6 +73,8 @@ export default {
       });
 
       const text = await response.text();
+
+      console.log('Response:', text);
 
       if (!response.ok) {
         return new Response(`Error sending message to SQS:\n${text}`, { status: 500 });
