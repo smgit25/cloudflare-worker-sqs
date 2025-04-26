@@ -17,6 +17,11 @@ export default {
     const now = new Date();
 	const AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID;
 	const AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY;
+
+  console.log(request);
+  const requestId = request.headers.get('x-request-id');
+
+  if(requestId == 'test') {
     // Format: 20250420T123456Z
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
     const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
@@ -90,7 +95,7 @@ export default {
     }
 
     return new Response('Message sent to SQS!', { status: 200 });
-  },
+  }},
 };
 
 // Utility functions using Web Crypto API
