@@ -1,4 +1,4 @@
-const AWS_REGION = 'us-east-2';
+/*const AWS_REGION = 'us-east-2';
 const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
 
 export default {
@@ -200,6 +200,34 @@ async function getAuthorizationHeader(params, amzDate, dateStamp, AWS_ACCESS_KEY
     'SignedHeaders=content-type;host;x-amz-date',
     'Signature=' + signature,
   ].join(', ');
-}
+}*/
+
+import { AwsClient } from 'aws4fetch';
+
+const aws = new AwsClient({
+  accessKeyId: 'AKIA57JRPEXWCQFPB4NS',
+  secretAccessKey: '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',
+  service: 'sqs',
+  region: 'us-east-2' // like 'us-east-1'
+});
+
+export default {
+  async fetch(request) {
+    const sqsUrl = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
+    const payload = {
+      Action: 'SendMessage',
+      MessageBody: 'this is my worker',
+      Version: '2012-11-05'
+    };
+
+    const response = await aws.fetch(sqsUrl, {
+      method: 'POST',
+      body: new URLSearchParams(payload)
+    });
+
+    return new Response('Message sent to SQS!', { status: 200 });
+  }
+};
+
 
 // Utility functions (hash, hmac, getSignatureKey, hmacText) remain unchanged
