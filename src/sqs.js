@@ -2,8 +2,12 @@ const AWS_REGION = 'us-east-2';
 const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
 
 export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) {
-  const { amzDate, dateStamp } = getAmzDates(now);
-  const { host, path } = getEndpointDetails(QUEUE_URL);
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
+
+  const endpoint = new URL(QUEUE_URL);
+  const host = endpoint.host;
+  const path = endpoint.pathname;
 
   const params = new URLSearchParams({
     Action: 'SendMessage',
@@ -14,9 +18,25 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   const payload = params.toString();
   const hashedPayload = await hash(payload);
 
-  const canonicalRequest = createCanonicalRequest(path, host, amzDate, hashedPayload);
+  const canonicalRequest = [
+    'POST',
+    path,
+    '',
+    `content-type:application/x-www-form-urlencoded`,
+    `host:${host}`,
+    `x-amz-date:${amzDate}`,
+    '',
+    'content-type;host;x-amz-date',
+    hashedPayload,
+  ].join('\n');
+
   const credentialScope = `${dateStamp}/${AWS_REGION}/sqs/aws4_request`;
-  const stringToSign = createStringToSign(amzDate, credentialScope, canonicalRequest);
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    await hash(canonicalRequest),
+  ].join('\n');
 
   const signingKey = await getSignatureKey(
     AWS_SECRET_ACCESS_KEY,
@@ -26,11 +46,12 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   );
 
   const signature = await hmac(signingKey, stringToSign, 'hex');
-  const authorizationHeader = createAuthorizationHeader(
-    AWS_ACCESS_KEY_ID,
-    credentialScope,
-    signature
-  );
+
+  const authorizationHeader = [
+    'AWS4-HMAC-SHA256 Credential=' + AWS_ACCESS_KEY_ID + '/' + credentialScope,
+    'SignedHeaders=content-type;host;x-amz-date',
+    'Signature=' + signature,
+  ].join(', ');
 
   const response = await fetch(QUEUE_URL, {
     method: 'POST',
@@ -50,53 +71,6 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   }
 
   return new Response('Message sent to SQS!', { status: 200 });
-}
-
-// Utility function to get Amazon date formats
-function getAmzDates(now) {
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
-  const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
-  return { amzDate, dateStamp };
-}
-
-// Utility function to get endpoint details
-function getEndpointDetails(queueUrl) {
-  const endpoint = new URL(queueUrl);
-  return { host: endpoint.host, path: endpoint.pathname };
-}
-
-// Utility function to create a canonical request
-function createCanonicalRequest(path, host, amzDate, hashedPayload) {
-  return [
-    'POST',
-    path,
-    '',
-    `content-type:application/x-www-form-urlencoded`,
-    `host:${host}`,
-    `x-amz-date:${amzDate}`,
-    '',
-    'content-type;host;x-amz-date',
-    hashedPayload,
-  ].join('\n');
-}
-
-// Utility function to create a string to sign
-async function createStringToSign(amzDate, credentialScope, canonicalRequest) {
-  return [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    credentialScope,
-    await hash(canonicalRequest),
-  ].join('\n');
-}
-
-// Utility function to create an authorization header
-function createAuthorizationHeader(AWS_ACCESS_KEY_ID, credentialScope, signature) {
-  return [
-    'AWS4-HMAC-SHA256 Credential=' + AWS_ACCESS_KEY_ID + '/' + credentialScope,
-    'SignedHeaders=content-type;host;x-amz-date',
-    'Signature=' + signature,
-  ].join(', ');
 }
 
 // Utility functions using Web Crypto API
