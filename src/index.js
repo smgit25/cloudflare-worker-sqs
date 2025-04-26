@@ -31,7 +31,7 @@ export default {
 
     const params = new URLSearchParams({
       Action: 'SendMessage',
-      MessageBody: JSON.stringify({ message: 'Hello from Cloudflare Worker!' }),
+      MessageBody: JSON.stringify({ message: 'Hello, this is from Cloudflare Worker!' }),
       Version: '2012-11-05',
     });
 
