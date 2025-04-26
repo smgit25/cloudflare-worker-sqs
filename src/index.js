@@ -10,15 +10,15 @@ export default {
     console.log(request);
     const requestId = request.headers.get('x-request-id');
 
-    if (requestId === 'test') {
-      // Logic to send a message to SQS
-      const response = await sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
-      return response;
-    } else if (requestId === 'process') {
-      // Logic to receive and delete a message from SQS
-      const response = await processMessageFromSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
-      return response;
-    }
+    // if (requestId === 'test') {
+    //   // Logic to send a message to SQS
+    //   const response = await sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
+    //   return response;
+    // } else if (requestId === 'process') {
+    //   // Logic to receive and delete a message from SQS
+    //   const response = await processMessageFromSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
+    //   return response;
+    // }
 
     return new Response('Invalid request ID', { status: 400 });
   },
