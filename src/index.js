@@ -1,94 +1,138 @@
+/**
+ * Welcome to Cloudflare Workers! This is your first worker.
+ *
+ * - Run `npm run dev` in your terminal to start a development server
+ * - Open a browser tab at http://localhost:8787/ to see your worker in action
+ * - Run `npm run deploy` to publish your worker
+ *
+ * Learn more at https://developers.cloudflare.com/workers/
+ */
+
 
 const AWS_REGION = 'us-east-2';
 const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
 
-
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request,env, ctx) {
     const now = new Date();
-    const AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID;
-    const AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY;
-    
-    // New part: get the x-request-id header
-    const requestId = request.headers.get('x-request-id');
-    console.log('x-request-id:', requestId);
-    // Only continue if x-request-id is exactly 'test'
-    if (requestId == 'test') {
-      // Format: 20250420T123456Z
-      const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
-      const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
+	const AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID;
+	const AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY;
+    // Format: 20250420T123456Z
+    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
 
-      const endpoint = new URL(QUEUE_URL);
-      const host = endpoint.host;
-      const path = endpoint.pathname;
+    const endpoint = new URL(QUEUE_URL);
+    const host = endpoint.host;
 
-      const params = new URLSearchParams({
-        Action: 'SendMessage',
-        MessageBody: JSON.stringify({ message: 'Hello from Cloudflare Worker!' }),
-        Version: '2012-11-05',
-      });
+    const params = new URLSearchParams({
+      Action: 'SendMessage',
+      MessageBody: JSON.stringify({ message: 'Hello from Cloudflare Worker!' }),
+      Version: '2012-11-05',
+    });
 
-      const payload = params.toString();
-      const hashedPayload = await hash(payload);
+	//const endpoint = new URL(QUEUE_URL);
 
-      const canonicalRequest = [
-        'POST',
-        path,
-        '',
-        `content-type:application/x-www-form-urlencoded`,
-        `host:${host}`,
-        `x-amz-date:${amzDate}`,
-        '',
-        'content-type;host;x-amz-date',
-        hashedPayload,
-      ].join('\n');
+	const path = endpoint.pathname;
 
-      const credentialScope = `${dateStamp}/${AWS_REGION}/sqs/aws4_request`;
-      const stringToSign = [
-        'AWS4-HMAC-SHA256',
-        amzDate,
-        credentialScope,
-        await hash(canonicalRequest),
-      ].join('\n');
+    const payload = params.toString();
+    const hashedPayload = await hash(payload);
 
-      const signingKey = await getSignatureKey(
-        AWS_SECRET_ACCESS_KEY,
-        dateStamp,
-        AWS_REGION,
-        'sqs'
-      );
+    const canonicalRequest = [
+      'POST',
+      path,
+      '',
+      `content-type:application/x-www-form-urlencoded`,
+      `host:${host}`,
+      `x-amz-date:${amzDate}`,
+      '',
+      'content-type;host;x-amz-date',
+      hashedPayload,
+    ].join('\n');
 
-      const signature = await hmac(signingKey, stringToSign, 'hex');
+    const credentialScope = `${dateStamp}/${AWS_REGION}/sqs/aws4_request`;
+    const stringToSign = [
+      'AWS4-HMAC-SHA256',
+      amzDate,
+      credentialScope,
+      await hash(canonicalRequest),
+    ].join('\n');
 
-      const authorizationHeader = [
-        'AWS4-HMAC-SHA256 Credential=' + AWS_ACCESS_KEY_ID + '/' + credentialScope,
-        'SignedHeaders=content-type;host;x-amz-date',
-        'Signature=' + signature,
-      ].join(', ');
+    const signingKey = await getSignatureKey(
+      AWS_SECRET_ACCESS_KEY,
+      dateStamp,
+      AWS_REGION,
+      'sqs'
+    );
 
-      const response = await fetch(QUEUE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Host: host,
-          'X-Amz-Date': amzDate,
-          Authorization: authorizationHeader,
-        },
-        body: payload,
-      });
+    const signature = await hmac(signingKey, stringToSign, 'hex');
 
-      const text = await response.text();
+    const authorizationHeader = [
+      'AWS4-HMAC-SHA256 Credential=' + AWS_ACCESS_KEY_ID + '/' + credentialScope,
+      'SignedHeaders=content-type;host;x-amz-date',
+      'Signature=' + signature,
+    ].join(', ');
 
-      console.log('Response:', text);
+    const response = await fetch(QUEUE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Host: host,
+        'X-Amz-Date': amzDate,
+        Authorization: authorizationHeader,
+      },
+      body: payload,
+    });
 
-      if (!response.ok) {
-        return new Response(`Error sending message to SQS:\n${text}`, { status: 500 });
-      }
+    const text = await response.text();
 
-      return new Response('Message sent to SQS!', { status: 200 });
-    } else {
-      // If x-request-id is missing or not 'test'
-      return new Response('Invalid or Missing x-request-id', { status: 400 });
+    if (!response.ok) {
+      return new Response(`Error sending message to SQS:\n${text}`, { status: 500 });
     }
+
+    return new Response('Message sent to SQS!', { status: 200 });
   },
 };
+
+// Utility functions using Web Crypto API
+async function hash(message) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(hashBuffer)]
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function hmac(key, message, encoding = 'hex') {
+  const enc = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(message));
+  return [...new Uint8Array(signature)]
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function getSignatureKey(key, dateStamp, regionName, serviceName) {
+  const kDate = await hmacText('AWS4' + key, dateStamp);
+  const kRegion = await hmacText(kDate, regionName);
+  const kService = await hmacText(kRegion, serviceName);
+  const kSigning = await hmacText(kService, 'aws4_request');
+  return kSigning;
+}
+
+async function hmacText(key, text) {
+  return await crypto.subtle.importKey(
+    'raw',
+    typeof key === 'string' ? new TextEncoder().encode(key) : key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  ).then(cryptoKey => crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(text)))
+    .then(buffer => new Uint8Array(buffer));
+}
