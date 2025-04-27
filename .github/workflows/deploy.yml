@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - demo
+    paths:
+      - 'src/**'
 
 jobs:
   deploy:

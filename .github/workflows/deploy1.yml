@@ -1,0 +1,29 @@
+name: Deploy on config or test changes
+
+on:
+  push:
+    paths:
+      - '.vscode/**'   # Trigger when changes are made in the .vscode folder
+      - 'test/**'      # Trigger when changes are made in the test folder
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Deploy
+        run: npm run deploy
