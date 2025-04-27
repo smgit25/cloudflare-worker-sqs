@@ -1,14 +1,9 @@
-import { 
-  hash, 
-  hmac, 
-  getSignatureKey, 
-  AWS_REGION, 
-  QUEUE_URL, 
-  API_VERSION, 
-  createCanonicalRequest 
-} from './utils.js';
+import {hash, hmac, getSignatureKey} from './utils.js';
 
-export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, action, messageBody) {
+const AWS_REGION = 'us-east-2';
+const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
+
+export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) {
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
   const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
 
@@ -17,16 +12,25 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   const path = endpoint.pathname;
 
   const params = new URLSearchParams({
-    Action: action, // Pass the action dynamically
-    MessageBody: JSON.stringify(messageBody), // Pass the message body dynamically
-    Version: API_VERSION, // Use the API version from utils.js
+    Action: 'SendMessage',
+    MessageBody: JSON.stringify({ message: 'Hello refactored from Cloudflare Worker!' }),
+    Version: '2012-11-05',
   });
 
   const payload = params.toString();
   const hashedPayload = await hash(payload);
 
-  // Use the createCanonicalRequest function from utils.js
-  const canonicalRequest = createCanonicalRequest(path, host, amzDate, hashedPayload);
+  const canonicalRequest = [
+    'POST',
+    path,
+    '',
+    `content-type:application/x-www-form-urlencoded`,
+    `host:${host}`,
+    `x-amz-date:${amzDate}`,
+    '',
+    'content-type;host;x-amz-date',
+    hashedPayload,
+  ].join('\n');
 
   const credentialScope = `${dateStamp}/${AWS_REGION}/sqs/aws4_request`;
   const stringToSign = [
@@ -54,7 +58,7 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   const response = await fetch(QUEUE_URL, {
     method: 'POST',
     headers: {
-      'Content-Type': CONTENT_TYPE, // Use content-type from utils.js
+      'Content-Type': 'application/x-www-form-urlencoded',
       Host: host,
       'X-Amz-Date': amzDate,
       Authorization: authorizationHeader,
