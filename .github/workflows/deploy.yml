@@ -16,9 +16,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install wrangler CLI
+      - name: Install Wrangler CLI
         run: npm install -g wrangler
-
 
       - name: Install dependencies (if needed)
         run: npm install
@@ -34,8 +33,4 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy --name cloudflare-worker-sqs --var "AWS_ACCESS_KEY_ID"=${{ secrets.AWS_ACCESS_KEY_ID }}
-                    --var "AWS_SECRET_ACCESS_KEY"=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          command: deploy --name cloudflare-worker-sqs
