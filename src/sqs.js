@@ -1,8 +1,9 @@
 const AWS_REGION = 'us-east-2';
 const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
 
-export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) {
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+export async function sendMessageToSQS() {
+  const currentDate = new Date();
+  const amzDate = currentDate.toISOString().replace(/[:-]|\.\d{3}/g, '');
   const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
 
   const endpoint = new URL(QUEUE_URL);
@@ -12,6 +13,7 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   const params = new URLSearchParams({
     Action: 'SendMessage',
     MessageBody: JSON.stringify({ message: 'Hello from Cloudflare Worker!' }),
+    MessageBody: JSON.stringify({ message: 'Hello refactored2 from Cloudflare Worker!' }),
     Version: '2012-11-05',
   });
 
@@ -39,7 +41,7 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   ].join('\n');
 
   const signingKey = await getSignatureKey(
-    AWS_SECRET_ACCESS_KEY,
+    env.AWS_SECRET_ACCESS_KEY,
     dateStamp,
     AWS_REGION,
     'sqs'
@@ -48,7 +50,7 @@ export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS
   const signature = await hmac(signingKey, stringToSign, 'hex');
 
   const authorizationHeader = [
-    'AWS4-HMAC-SHA256 Credential=' + AWS_ACCESS_KEY_ID + '/' + credentialScope,
+    'AWS4-HMAC-SHA256 Credential=' + env.AWS_ACCESS_KEY_ID + '/' + credentialScope,
     'SignedHeaders=content-type;host;x-amz-date',
     'Signature=' + signature,
   ].join(', ');

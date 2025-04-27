@@ -16,6 +16,9 @@ export default {
     const now = new Date();
     const AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID;
     const AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY;
+    // const now = new Date();
+    // const AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID;
+    // const AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY;
 
     const response = await sendMessageToSQS(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY);
     return response;
