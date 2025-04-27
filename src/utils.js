@@ -1,3 +1,18 @@
+export const AWS_REGION = 'us-east-2';
+export const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
+const canonicalRequest = [
+    'POST',
+    path,
+    '',
+    `content-type:${CONTENT_TYPE}`, // Use content-type from utils.js
+    `host:${host}`,
+    `x-amz-date:${amzDate}`,
+    '',
+    SIGNED_HEADERS, // Use signed headers from utils.js
+    hashedPayload,
+  ].join('\n');
+
+
 export async function hash(message) {
     const encoder = new TextEncoder();
     const data = encoder.encode(message);
@@ -5,6 +20,29 @@ export async function hash(message) {
     return [...new Uint8Array(hashBuffer)]
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+  }
+
+  export function createCanonicalRequest(path, host, amzDate, hashedPayload) {
+    return [
+      'POST',
+      path,
+      '',
+      `content-type:application/x-www-form-urlencoded`,
+      `host:${host}`,
+      `x-amz-date:${amzDate}`,
+      '',
+      'content-type;host;x-amz-date',
+      hashedPayload,
+    ].join('\n');
+  }
+
+  export async function createStringToSign(amzDate, credentialScope, canonicalRequest) {
+    return [
+      'AWS4-HMAC-SHA256',
+      amzDate,
+      credentialScope,
+      await hash(canonicalRequest),
+    ].join('\n');
   }
 
   export async function hmac(key, message, encoding = 'hex') {
@@ -39,4 +77,15 @@ export async function hash(message) {
       ['sign']
     ).then(cryptoKey => crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(text)))
       .then(buffer => new Uint8Array(buffer));
+  }
+
+  export const sqsConstants = {
+    post: 'POST',
+    contentType: 'application/x-www-form-urlencoded; charset=utf-8',
+    host: 'host',
+    xAmzDate: 'x-amz-date',
+    contentTypeHeader: 'content-type',
+    xAmzDateHeader: 'x-amz-date',
+
+
   }
