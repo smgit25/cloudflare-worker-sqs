@@ -13,6 +13,7 @@ import { sendMessageToSQS } from './sqs.js';
 
 export default {
   async fetch(request, env, ctx) {
+    
     const now = new Date();
     // const AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID;
     // const AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY;
