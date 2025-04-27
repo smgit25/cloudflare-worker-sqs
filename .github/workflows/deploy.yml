@@ -28,6 +28,7 @@ jobs:
         run: |
           wrangler secret put AWS_ACCESS_KEY_ID <<< "${{ secrets.AWS_ACCESS_KEY_ID }}"
           wrangler secret put AWS_SECRET_ACCESS_KEY <<< "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          wrangler secret put TEST <<< "${{secrets.test}}"
 
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
