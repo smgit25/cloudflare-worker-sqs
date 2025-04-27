@@ -38,5 +38,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: |
             deploy --name cloudflare-worker-sqs 
-            cd test
             ls
