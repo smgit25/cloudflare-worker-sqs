@@ -1,4 +1,3 @@
-// Utility function to hash a message
 export async function hash(message) {
     const encoder = new TextEncoder();
     const data = encoder.encode(message);
@@ -7,42 +6,7 @@ export async function hash(message) {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
   }
-  
-  // Utility function to create a canonical request
-  export function createCanonicalRequest(path, host, amzDate, hashedPayload) {
-    return [
-      'POST',
-      path,
-      '',
-      `content-type:application/x-www-form-urlencoded`,
-      `host:${host}`,
-      `x-amz-date:${amzDate}`,
-      '',
-      'content-type;host;x-amz-date',
-      hashedPayload,
-    ].join('\n');
-  }
-  
-  // Utility function to create a string to sign
-  export async function createStringToSign(amzDate, credentialScope, canonicalRequest) {
-    return [
-      'AWS4-HMAC-SHA256',
-      amzDate,
-      credentialScope,
-      await hash(canonicalRequest),
-    ].join('\n');
-  }
-  
-  // Utility function to generate the signing key
-  export async function getSignatureKey(key, dateStamp, regionName, serviceName) {
-    const kDate = await hmac(`AWS4${key}`, dateStamp);
-    const kRegion = await hmac(kDate, regionName);
-    const kService = await hmac(kRegion, serviceName);
-    const kSigning = await hmac(kService, 'aws4_request');
-    return kSigning;
-  }
-  
-  // Utility function to perform HMAC
+
   export async function hmac(key, message, encoding = 'hex') {
     const enc = new TextEncoder();
     const cryptoKey = await crypto.subtle.importKey(
@@ -56,4 +20,23 @@ export async function hash(message) {
     return [...new Uint8Array(signature)]
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+  }
+
+  export async function getSignatureKey(key, dateStamp, regionName, serviceName) {
+    const kDate = await hmacText('AWS4' + key, dateStamp);
+    const kRegion = await hmacText(kDate, regionName);
+    const kService = await hmacText(kRegion, serviceName);
+    const kSigning = await hmacText(kService, 'aws4_request');
+    return kSigning;
+  }
+
+  export async function hmacText(key, text) {
+    return await crypto.subtle.importKey(
+      'raw',
+      typeof key === 'string' ? new TextEncoder().encode(key) : key,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    ).then(cryptoKey => crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(text)))
+      .then(buffer => new Uint8Array(buffer));
   }
