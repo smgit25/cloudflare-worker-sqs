@@ -36,4 +36,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy --name cloudflare-worker-sqs
+          command: |
+          deploy --name cloudflare-worker-sqs
+          cd test
+          ls
