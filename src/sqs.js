@@ -3,8 +3,10 @@ import {hash, hmac, getSignatureKey} from './utils.js';
 
 const AWS_REGION = 'us-east-2';
 const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
+const AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY;
 
-export async function sendMessageToSQS(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) {
+export async function sendMessageToSQS() {
   const currentDate = new Date();
   const amzDate = currentDate.toISOString().replace(/[:-]|\.\d{3}/g, '');
   const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
