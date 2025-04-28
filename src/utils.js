@@ -1,3 +1,4 @@
+
 export async function hash(message) {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
