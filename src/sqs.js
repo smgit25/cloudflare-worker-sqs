@@ -4,8 +4,9 @@ import {hash, hmac, getSignatureKey} from './utils.js';
 const AWS_REGION = 'us-east-2';
 const QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/960565814764/my-test-queue';
 
-export async function sendMessageToSQS(now, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) {
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+export async function sendMessageToSQS(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) {
+  const currentDate = new Date();
+  const amzDate = currentDate.toISOString().replace(/[:-]|\.\d{3}/g, '');
   const dateStamp = amzDate.slice(0, 8); // YYYYMMDD
 
   const endpoint = new URL(QUEUE_URL);
